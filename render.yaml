@@ -1,17 +1,14 @@
 services:
   - type: web
     name: masksafe-backend
-    runtime: python
-    runtimeVersion: 3.11
-    rootDir: backend
+    runtime: docker
     plan: free
-    # tesseract é exigido pelo OCR (pytesseract) para páginas PDF sem camada
-    # de texto. Sem ele, upload de PDF só-imagem falhava com 500.
-    aptPackages:
-      - tesseract-ocr
-      - tesseract-ocr-por
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Runtime Docker porque o OCR (pytesseract) precisa do Tesseract instalado
+    # via apt, o que o runtime Python nativo do Render nao permite.
+    # Ver backend/Dockerfile.
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /
     envVars:
       # Connection string do Neon: o Render pede o valor na criação do Blueprint.
       - key: DATABASE_URL

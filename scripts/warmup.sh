@@ -3,13 +3,13 @@
 #
 # Uso:
 #   scripts/warmup.sh                       # 12 pings de 10s (~2 min)
-#   scripts/warmup.sh --url https://safemask-backend.onrender.com --pings 30 --interval 10
+#   scripts/warmup.sh --url https://masksafe-backend.onrender.com --pings 30 --interval 10
 #
 # Rode ~10 minutos antes de apresentar; se quiser, agende o ping com cron.
 
 set -euo pipefail
 
-URL="https://safemask-backend.onrender.com"
+URL="https://masksafe-backend.onrender.com"
 PINGS=12
 INTERVAL=10
 

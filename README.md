@@ -2,7 +2,7 @@
 
 Projeto acadêmico do curso de Ciência da Computação do CEUB (Centro Universitário de Brasília), disciplina **Projeto Integrador III**.
 
-O MaskSafe dá continuidade ao **SafeMask**, desenvolvido no semestre anterior. Este repositório parte do código do SafeMask e segue com ajustes, testes e novas funcionalidades. Por isso, nomes internos do código, do banco e das URLs de deploy ainda usam `safemask`.
+O MaskSafe dá continuidade ao **SafeMask**, desenvolvido no semestre anterior. Este repositório parte do código do SafeMask e segue com ajustes, testes e novas funcionalidades. Por isso, alguns nomes internos do código ainda usam `safemask`.
 
 **Proteção de dados sensíveis com IA:** o sistema detecta e censura automaticamente informações confidenciais em documentos PDF, em apoio à conformidade com a LGPD.
 
@@ -10,9 +10,9 @@ O MaskSafe dá continuidade ao **SafeMask**, desenvolvido no semestre anterior. 
 
 | Serviço | URL |
 |---|---|
-| 🌐 Frontend (Vercel) | https://safe-mask.vercel.app |
-| 🔙 Backend (Render) | https://safemask-backend.onrender.com |
-| 📄 API Docs (Swagger) | https://safemask-backend.onrender.com/docs |
+| 🌐 Frontend (Vercel) | https://masksafe.vercel.app |
+| 🔙 Backend (Render) | https://masksafe-backend.onrender.com |
+| 📄 API Docs (Swagger) | https://masksafe-backend.onrender.com/docs |
 | 💾 Banco de dados | PostgreSQL serverless (Neon) |
 
 > O backend roda no plano gratuito do Render e "dorme" quando fica ocioso. A primeira requisição pode levar mais de 60 s. Antes de uma demonstração, rode `scripts/warmup.sh`.
@@ -73,7 +73,8 @@ O MaskSafe é uma plataforma full-stack para proteção de dados sensíveis:
 **Infra e qualidade**
 
 - Vercel (frontend), Render (backend) e Neon (banco)
-- GitHub Actions: pytest e ruff a cada push ou PR, mais deploy na Vercel ao fazer merge na `main`
+- GitHub Actions: pytest e ruff a cada push ou PR
+- Deploy automático na Vercel e no Render a cada push na `main`
 
 ## 📁 Estrutura do projeto
 
@@ -83,9 +84,9 @@ masksafe/
 ├── render.yaml                # Blueprint do backend no Render
 ├── vercel.json                # Configuração do site estático
 ├── .github/workflows/
-│   ├── ci-backend.yml         # pytest + ruff
-│   └── vercel-merge.yml       # Deploy do frontend na main
+│   └── ci-backend.yml         # pytest + ruff
 ├── backend/
+│   ├── Dockerfile             # Imagem do backend (Render)
 │   ├── requirements.txt       # Dependências de produção (sem IA)
 │   ├── requirements-ia.txt    # torch + transformers (NER local)
 │   ├── requirements-dev.txt   # Dependências de teste e lint
@@ -194,7 +195,7 @@ python -m http.server 8080
 - Landing: http://localhost:8080
 - Login: http://localhost:8080/frontend/html/auth/login.html
 
-O `frontend/js/config.js` aponta para `http://localhost:8000` quando o host é `localhost`/`127.0.0.1` e para `https://safemask-backend.onrender.com` nos demais casos. Em desenvolvimento, o backend aceita qualquer porta de localhost via CORS.
+O `frontend/js/config.js` aponta para `http://localhost:8000` quando o host é `localhost`/`127.0.0.1` e para `https://masksafe-backend.onrender.com` nos demais casos. Em desenvolvimento, o backend aceita qualquer porta de localhost via CORS.
 
 ## 🔧 Variáveis de ambiente
 
@@ -204,7 +205,7 @@ O `frontend/js/config.js` aponta para `http://localhost:8000` quando o host é `
 | `SECRET_KEY` | Sim | Chave de assinatura dos JWT |
 | `ENVIRONMENT` | Não | `development` (padrão) ou `production`. Em produção, as origens de localhost saem do CORS |
 | `FRONTEND_ORIGINS` | Não | Origens extras para o CORS, separadas por vírgula |
-| `FRONTEND_URL` | Não | URL usada nos e-mails de recuperação de senha (padrão: `https://safe-mask.vercel.app`) |
+| `FRONTEND_URL` | Não | URL usada nos e-mails de recuperação de senha (padrão: `https://masksafe.vercel.app`) |
 | `BREVO_API_KEY`, `SMTP_FROM`, `SMTP_FROM_NAME`, `SUPPORT_EMAIL` | Não | Envio de e-mails (recuperação de senha) |
 | `MAX_UPLOAD_BYTES` | Não | Tamanho máximo do upload (padrão: 20 MB) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Não | Validade do token de acesso (padrão: 120) |
@@ -255,9 +256,9 @@ A documentação interativa completa fica em `/docs`. Resumo das rotas:
 
 ## ☁️ Deploy
 
-**Frontend (Vercel):** site estático com a raiz do repositório como diretório raiz, sem comando de build. Cada push na `main` faz o deploy pelo workflow `vercel-merge.yml`, que precisa dos secrets `VERCEL_TOKEN`, `ORG_ID` e `PROJECT_ID`.
+**Frontend (Vercel):** site estático com a raiz do repositório como diretório raiz, sem comando de build. O projeto está ligado ao repositório pela integração nativa da Vercel com o GitHub: cada push na `main` publica em produção e cada PR ganha uma URL de preview.
 
-**Backend (Render):** criado a partir do Blueprint `render.yaml` (`rootDir: backend`, Python 3.11, pacotes apt do Tesseract, `pip install -r requirements.txt` e `uvicorn app.main:app --host 0.0.0.0 --port $PORT`). Configure `DATABASE_URL`, `SECRET_KEY` e `ENVIRONMENT=production` no painel. Toda alteração no `render.yaml` exige um "Sync" do Blueprint.
+**Backend (Render):** criado a partir do Blueprint `render.yaml` (runtime Docker com `backend/Dockerfile`, que instala o Tesseract para o OCR). O Blueprint já define `ENVIRONMENT`, `FRONTEND_URL` e `FRONTEND_ORIGINS` e gera a `SECRET_KEY`; só a `DATABASE_URL` é preenchida no painel. Toda alteração no `render.yaml` exige um "Sync" do Blueprint.
 
 **Banco (Neon):** PostgreSQL serverless. Basta apontar `DATABASE_URL` para ele.
 

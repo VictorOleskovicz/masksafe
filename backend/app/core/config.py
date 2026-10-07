@@ -19,8 +19,7 @@ logger = logging.getLogger(__name__)
 # navegador ignora o header e o proprio FastAPI documenta como invalido.
 # Separe por virgula em FRONTEND_ORIGINS.
 _ORIGENS_PADRAO = (
-    "https://safe-mask.vercel.app,"
-    "https://safemask-frontend.vercel.app,"
+    "https://masksafe.vercel.app,"
     "http://localhost:5500,"
     "http://localhost:3000"
 )
@@ -108,7 +107,7 @@ def _cors_origin_regex() -> str | None:
 CORS_ORIGIN_REGEX: str | None = _cors_origin_regex()
 
 # URL publica do frontend, usada nos emails de recuperacao de senha.
-FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://safe-mask.vercel.app").rstrip("/")
+FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://masksafe.vercel.app").rstrip("/")
 
 # Tamanho maximo de upload. 20 MB e o teto do Vercel; acima disso o upload
 # morre no proxy antes de chegar na aplicacao.

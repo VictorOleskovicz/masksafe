@@ -21,12 +21,14 @@ from scanner.coordenadas import (
     para_pontos,
 )
 from scanner.patterns import (
+    CARTAO_PATTERN,
     CID10_PATTERN,
     CNS_PATTERN,
     CPF_PATTERN,
     CRM_PATTERN,
     EMAIL_PATTERN,
     PHONE_PATTERN,
+    cartao_valido,
     increment_cpf_count,
     mask_cpf,
     mask_phone,
@@ -139,7 +141,13 @@ def configuracoes_regex() -> dict:
     modelo NER (centenas de MB), e e assim que o teste de paridade entre regex
     e NER consegue verificar sem instanciar o scanner.
     """
+    # A ordem importa: quem vem antes "reserva" o trecho do texto e um padrao
+    # posterior que caia dentro dele e ignorado (ver `_sobrepoe`). O cartao
+    # vem primeiro porque um pedaco dele ("11 1111 1111") casa com o padrao de
+    # telefone: sem isso o cartao recebia mascara de telefone e os outros
+    # digitos ficavam visiveis.
     return {
+        "CARTAO": {"pattern": CARTAO_PATTERN.pattern, "level": 3},
         "CPF": {"pattern": CPF_PATTERN.pattern, "level": 3},
         "CNPJ": {"pattern": r'\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b', "level": 1},
         "EMAIL": {"pattern": EMAIL_PATTERN.pattern, "level": 2},
@@ -155,6 +163,18 @@ def configuracoes_regex() -> dict:
         # `(?!\d)` exclui "98765-432..." (parte de um telefone com DDD).
         "ENDERECO": {"pattern": r'(?<!\d)\d{5}-\d{3}(?!\d)', "level": 1},
     }
+
+
+# Validacao extra por tipo, alem do regex. Um match que falha aqui nao e dado
+# sensivel e nao reserva o trecho do texto.
+VALIDADORES_REGEX = {
+    "CARTAO": cartao_valido,
+}
+
+
+def _sobrepoe(inicio: int, fim: int, ocupados: list) -> bool:
+    """O trecho [inicio, fim) cruza algum trecho ja reservado por outro dado?"""
+    return any(inicio < f and i < fim for i, f in ocupados)
 
 
 class DocumentScanner:
@@ -410,10 +430,17 @@ class DocumentScanner:
                     continue
 
                 segredos_encontrados = []
+                trechos_ocupados = []
 
                 for tipo, config in self.regex_config.items():
+                    validar = VALIDADORES_REGEX.get(tipo)
                     for match in re.finditer(config['pattern'], texto):
                         segredo = match.group()
+                        if validar and not validar(segredo):
+                            continue
+                        if _sobrepoe(match.start(), match.end(), trechos_ocupados):
+                            continue
+                        trechos_ocupados.append((match.start(), match.end()))
                         if segredo not in segredos_encontrados:
                             count, coords = self._salvar_dado(
                                 db, novo_doc.doc_id, page, page_num,

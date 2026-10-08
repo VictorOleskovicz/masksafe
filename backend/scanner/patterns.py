@@ -15,6 +15,27 @@ CNS_PATTERN = re.compile(r"\b\d{15}\b")
 CID10_PATTERN = re.compile(r"\b[A-TV-Z]\d{2}(?:\.\d{1,4})?\b", re.IGNORECASE)
 CRM_PATTERN = re.compile(r"CRM(?:\s*[-/]\s*[A-Z]{2})?\s+\d{4,6}", re.IGNORECASE)
 
+# Cartao de credito/debito: 13 a 19 digitos, em blocos separados por espaco ou
+# hifen ("4111 1111 1111 1111", "4111-1111-1111-1111") ou corridos. A
+# validacao de verdade e o Luhn em `cartao_valido`: sem ela, qualquer
+# sequencia longa de numeros viraria "cartao".
+CARTAO_PATTERN = re.compile(r"(?<![\d.,/-])\d{4}(?:[ -]?\d{3,4}){2}[ -]?\d{1,7}(?![\d.,/-]?\d)")
+
+
+def cartao_valido(numero: str) -> bool:
+    """Numero de cartao com 13 a 19 digitos e digito verificador (Luhn) ok."""
+    digitos = [int(c) for c in numero if c.isdigit()]
+    if not 13 <= len(digitos) <= 19:
+        return False
+    soma = 0
+    for i, d in enumerate(reversed(digitos)):
+        if i % 2 == 1:
+            d *= 2
+            if d > 9:
+                d -= 9
+        soma += d
+    return soma % 10 == 0
+
 
 def normalize_phone(phone: str) -> str | None:
     normalized_phone = phone.strip()

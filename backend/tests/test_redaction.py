@@ -31,3 +31,20 @@ class CpfMaskRenderingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_mascara_fica_dentro_da_tarja():
+    """A mascara branca nao pode vazar pela borda de baixo da tarja."""
+    image = Image.new("RGB", (400, 80), "gray")
+    caixa = (20, 20, 380, 50)
+
+    draw_cpf_mask(image, caixa)
+
+    for x in range(image.width):
+        for y in list(range(0, 20)) + list(range(51, 80)):
+            assert image.getpixel((x, y)) == (128, 128, 128), (x, y)
+    # e o texto branco aparece nas metades de cima e de baixo (centralizado)
+    def branco(y0, y1):
+        return any(image.getpixel((x, y))[0] > 200
+                   for x in range(20, 380) for y in range(y0, y1))
+    assert branco(20, 35) and branco(35, 51)

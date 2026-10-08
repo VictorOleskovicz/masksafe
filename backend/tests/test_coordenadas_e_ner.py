@@ -191,7 +191,7 @@ def test_nivel_do_ner_bate_com_o_do_regex():
 def test_niveis_do_regex_sao_os_niveis_documentados():
     """Trava a escala que o resto do sistema assume (1 supervisor, 3 lider)."""
     assert _niveis_do_regex() == {
-        "CPF": 3, "CNPJ": 1, "EMAIL": 2, "TELEFONE": 2, "CNS": 3,
+        "CARTAO": 3, "CPF": 3, "CNPJ": 1, "EMAIL": 2, "TELEFONE": 2, "CNS": 3,
         "CID10": 3, "CRM": 3, "RG": 3, "PROCESSO": 1, "DATA_NASC": 2,
         "ENDERECO": 1,
     }
@@ -276,3 +276,19 @@ def test_salvar_dado_conta_caixas_do_ocr(db_session):
 
     assert salvos == 1
     assert len(coordenadas) == 1
+
+
+def test_trecho_reservado_por_um_dado_nao_e_reusado_por_outro():
+    from scanner.scanner import _sobrepoe
+
+    ocupados = [(8, 27)]  # o cartao
+    assert _sobrepoe(10, 22, ocupados)       # telefone dentro do cartao
+    assert not _sobrepoe(27, 40, ocupados)   # encostado, sem cruzar
+    assert not _sobrepoe(0, 8, ocupados)
+
+
+def test_cartao_vem_antes_do_telefone_na_ordem_dos_regex():
+    from scanner.scanner import configuracoes_regex
+
+    tipos = list(configuracoes_regex())
+    assert tipos.index("CARTAO") < tipos.index("TELEFONE")

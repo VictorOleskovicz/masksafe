@@ -122,3 +122,30 @@ class CpfMaskTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --- cartao de credito ------------------------------------------------------
+
+from scanner.patterns import CARTAO_PATTERN, cartao_valido  # noqa: E402
+
+
+def test_cartao_valido_aceita_numero_com_luhn_correto():
+    assert cartao_valido("4111 1111 1111 1111")
+    assert cartao_valido("5555-5555-5555-4444")
+    assert cartao_valido("4111111111111111")
+
+
+def test_cartao_valido_recusa_luhn_errado_ou_tamanho_fora():
+    assert not cartao_valido("4111 1111 1111 1112")
+    assert not cartao_valido("1234 5678")
+
+
+def test_padrao_de_cartao_pega_o_numero_inteiro():
+    texto = "Cartao: 4111 1111 1111 1111  Validade 12/29"
+    achados = [m.group() for m in CARTAO_PATTERN.finditer(texto)]
+    assert achados == ["4111 1111 1111 1111"]
+
+
+def test_padrao_de_cartao_nao_pega_cpf_cnpj_nem_processo():
+    for texto in ("123.456.789-00", "12.345.678/0001-90", "0001234-56.2026.8.26.0100"):
+        assert not CARTAO_PATTERN.search(texto), texto
